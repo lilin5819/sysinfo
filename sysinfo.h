@@ -120,6 +120,8 @@ double get_freeram_rate();
 unsigned int get_procs();
 
 sysinfo_t *get_sysinfo();
+void print_sysinfo(sysinfo_t *sys);
+
 char* get_file_value(char *filename);
 char* get_netdev_info(char *ifname,char *item);
 int cpuinfo_query(char *find_key,cpuinfo_item **item,size_t max);

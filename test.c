@@ -22,6 +22,16 @@ int main(int argc, char const *argv[])
 
     test_get_sysinfo(ifname);
 
+    sysinfo_t *sysinfo = get_sysinfo();
+    ok(sysinfo);
+    print_sysinfo(sysinfo);
+    log_long(sysinfo->uptime);
+    log_ulong(sysinfo->totalram);
+    log_ulong(sysinfo->freeram);
+    log_float(sysinfo->freeram_rate);
+    log_uint(sysinfo->procs);
+    FREE(sysinfo);
+
     log_string(ifname);
     log_string(get_gateway());
     log_string(get_gateway_if());

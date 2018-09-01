@@ -81,6 +81,16 @@ sysinfo_t *get_sysinfo()
     return sysinfo_p;
 }
 
+void print_sysinfo(sysinfo_t *sys)
+{
+    if(!sys) return;
+    printf("uptime:%ld sec\n",sys->uptime);
+    printf("totalram:%lu KB\n",sys->totalram);
+    printf("freeram:%lu KB\n",sys->freeram);
+    printf("freeram_rate:%.2f%%\n",sys->freeram_rate);
+    printf("procs:%u\n",sys->procs);
+}
+
 char* get_file_value(char *filename)
 {
     FILE *stream = NULL;
