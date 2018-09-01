@@ -481,9 +481,9 @@ char *get_gateway_if(void)
 
 char *macstr_fmt(char *mac,char *sep)
 {
-    if(!mac || !sep) return NULL;
+    if(!mac || !sep || strlen(sep) > 4) return NULL;
     char *net_mac = NULL;
-    static char out_macstr[32] = {0};
+    static char out_macstr[64] = {0};
     net_mac = (char *)ether_aton(mac);
     if(!net_mac) return NULL;
     sprintf(out_macstr,"%02X%s%02X%s%02X%s%02X%s%02X%s%02X",
@@ -493,9 +493,9 @@ char *macstr_fmt(char *mac,char *sep)
 
 char *macstr_unfmt(char *mac,char *sep)
 {
-    if(!mac || !sep) return NULL;
+    if(!mac || !sep || strlen(sep) > 4) return NULL;
     char fmt[64] = {0},net_mac[6] = {0};
-    static char out_macstr[32] = {0};
+    static char out_macstr[64] = {0};
     sprintf(fmt,"%%02X%s%%02X%s%%02X%s%%02X%s%%02X%s%%02X",sep,sep,sep,sep,sep);
     sscanf(mac,fmt,&net_mac[0],&net_mac[1],&net_mac[2],&net_mac[3],&net_mac[4],&net_mac[5]);
     if(!net_mac) return NULL;

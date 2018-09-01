@@ -50,18 +50,26 @@ int main(int argc, char const *argv[])
     log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),"-"));
     // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),""));
     // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),":"));
+
+    puts("\n");
+    log_string(get_if_macstr(ifname));
+    log_string(macstr_fmt(get_if_macstr(ifname),"0123abcd"));
+    log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"0123abcd"),"0123abcd"));
+
     puts("\n");
     log_string(get_if_macstr(ifname));
     log_string(macstr_fmt(get_if_macstr(ifname),""));
     log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),""));
     // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),"-"));
     // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),":"));
+
     puts("\n");
     log_string(get_if_ipstr("enp0s8"));
     log_string(get_if_ipstr("enp0s10"));
     log_string(get_if_ipstr("enp0s15"));
     log_string(get_if_ipstr("wlan0"));
     log_string(get_if_ipstr("wlan1"));
+
     puts("\n");
     log_string(get_if_info(ifname,SIOCGIFHWADDR));
     log_string(macstr_fmt(get_if_info(ifname,SIOCGIFHWADDR),"-"));
