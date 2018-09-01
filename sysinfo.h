@@ -51,6 +51,7 @@
 
 static inline void strip_r(char *str)
 {
+    if(!str) return ;
     char *p = str + strlen(str) - 1;
     while(*p == ' ' || *p == '\r' || *p == '\n' || *p == '\t')
     {

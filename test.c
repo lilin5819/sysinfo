@@ -23,7 +23,6 @@ int main(int argc, char const *argv[])
     test_get_sysinfo(ifname);
 
     sysinfo_t *sysinfo = get_sysinfo();
-    ok(sysinfo);
     print_sysinfo(sysinfo);
     log_long(sysinfo->uptime);
     log_ulong(sysinfo->totalram);
@@ -32,7 +31,16 @@ int main(int argc, char const *argv[])
     log_uint(sysinfo->procs);
     FREE(sysinfo);
 
+    puts("\n");
+
     log_string(ifname);
+    log_string(get_netdev_info(ifname,"address"));
+    log_string(get_netdev_info(ifname,"speed"));
+    log_string(get_netdev_info(ifname,"mtu"));
+    log_string(get_netdev_info(ifname,"mtc"));
+    log_string(get_netdev_info(ifname,"mtcsdfasdfasdfadsfadfadfadfad"));
+    log_string(get_netdev_info("faefaefefwefwefawefaefawefae","mtu"));
+
     log_string(get_gateway());
     log_string(get_gateway_if());
 

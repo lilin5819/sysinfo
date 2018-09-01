@@ -95,6 +95,7 @@ char* get_file_value(char *filename)
 {
     FILE *stream = NULL;
     char *line = NULL;
+    static char value[128] = {0}; 
     ssize_t nread = 0,len = 0;
 
     if (!(stream = fopen(filename, "r")) ) {
@@ -104,15 +105,21 @@ char* get_file_value(char *filename)
 
     nread = getline(&line, &len, stream);
     strip_r(line);
+    if(nread > 0 && line)
+        sprintf(value,"%s",line);
 
 OUT:
     FCLOSE(stream);
-    return line;
+    return nread > 0 ? value : NULL;
 }
 
 char* get_netdev_info(char *ifname,char *item)
 {
     char filename[64];
+    if(strlen(ifname) > 16 || strlen(item) > 16){
+        printf("ifname or item too long\n");
+        return NULL;
+    }
 
     sprintf(filename,"/sys/class/net/%s/%s",ifname,item);
     return get_file_value(filename);
@@ -322,7 +329,15 @@ int test_get_sysinfo(char *ifname)
 
     value = get_netdev_info(ifname,"speed");
     if(value)
+        printf("ifname=\"%s\" speed=%s\n",ifname,value);
+
+    value = get_netdev_info(ifname,"mtu");
+    if(value)
         printf("ifname=\"%s\" mtu=%s\n",ifname,value);
+
+    value = get_netdev_info(ifname,"mtuc");
+    if(value)
+        printf("ifname=\"%s\" mtuc=%s\n",ifname,value);
 
     ninfo = cpuinfo_query("model name",&cpu_item,4);
     for(i=0;i<ninfo;i++)
@@ -342,7 +357,6 @@ int test_get_sysinfo(char *ifname)
         printf("ip=\"%s\" type=\"%s\" flags=\"%s\" mac=\"%s\" ifname=\"%s\"\n",
             arp_item[i].ip,arp_item[i].type,arp_item[i].flags,arp_item[i].mac,arp_item[i].ifname);
 
-    FREE(value);
     FREE(cpu_item);
     FREE(mem_item);
     FREE(route_item);
