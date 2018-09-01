@@ -1,20 +1,16 @@
 #define _GNU_SOURCE
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/sysinfo.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <sys/types.h>
+#include <netinet/in.h> 
+#include <netinet/ip.h>
+#include <net/ethernet.h>
+#include <netinet/ether.h> 
+#include "sysinfo.h"
 
-#define FREE(p) do{ \
-    if(p) \
-        free(p);\
-    p = NULL;\
-}while(0)
-
-#define FCLOSE(stream) do{ \
-    if(stream)\
-        fclose(stream);\
-    stream = NULL;\
-}while(0)
 
 long get_uptime()
 {
@@ -61,14 +57,23 @@ unsigned int get_procs()
     return info.procs;  
 }
 
-void strip_r(char *str)
+sysinfo_t *get_sysinfo()
 {
-    char *p = str + strlen(str) - 1;
-    while(*p == ' ' || *p == '\r' || *p == '\n' || *p == '\t')
-    {
-        *p = '\0';
-        p--;
+    struct sysinfo info;
+    sysinfo_t *sysinfo_p = NULL;
+    if(-1 == sysinfo(&info))
+        return NULL;
+    
+    if(!(sysinfo_p = (sysinfo_t *)malloc(sizeof(sysinfo_t)))){
+        return NULL;
     }
+    sysinfo_p->uptime = info.uptime;
+    sysinfo_p->totalram = info.totalram>>10;
+    sysinfo_p->freeram = info.freeram>>10;
+    sysinfo_p->freeram_rate = 100.0*info.freeram/info.totalram;    
+    sysinfo_p->procs = info.procs;
+
+    return sysinfo_p;
 }
 
 char* get_file_value(char *filename)
@@ -87,24 +92,16 @@ char* get_file_value(char *filename)
 
 OUT:
     FCLOSE(stream);
-    // if(!nread)
-    //     return strdup("");
     return line;
 }
 
-char* get_sysdev_info(char *ifname,char *item)
+char* get_netdev_info(char *ifname,char *item)
 {
     char filename[64];
 
     sprintf(filename,"/sys/class/net/%s/%s",ifname,item);
     return get_file_value(filename);
 }
-
-
-typedef struct cpuinfo_item{
-    char key[32];
-    char value[1024];
-}cpuinfo_item;
 
 int cpuinfo_query(char *find_key,cpuinfo_item **item,size_t max)
 {
@@ -140,12 +137,6 @@ OUT:
     return nfound;
 }
 
-typedef struct meminfo_item{
-    char key[32];
-    char value[32];
-    char extra[8];
-}meminfo_item;
-
 int meminfo_query(char *find_key,meminfo_item **item,size_t max)
 {
     FILE *stream = NULL;
@@ -178,24 +169,6 @@ OUT:
     FCLOSE(stream);
     return nfound;
 }
-
-typedef struct route_item{
-    char ifname[32];
-    char dest[32];
-    char gateway[32];
-    char flags[8];
-    char metric[8];
-    char mask[32];
-}route_item;
-
-enum RT_QUERY_TYPE{
-    RT_IFNAME = 0,
-    RT_DEST,
-    RT_GATEWAY,
-    RT_FLAGS,
-    RT_METRIC,
-    RT_MASK,
-};
 
 int route_query(enum RT_QUERY_TYPE type,char *find_key,route_item **item,size_t max)
 {
@@ -256,21 +229,6 @@ OUT:
     return nfound;
 }
 
-typedef struct arp_item{
-    char ip[32];
-    char type[8];
-    char flags[8];
-    char mac[32];
-    char ifname[32];
-}arp_item;
-
-enum ARP_QUERY_TYPE{
-    ARP_IP = 0,
-    ARP_TYPE,
-    ARP_FLAGS,
-    ARP_MAC,
-    ARP_IFNAME,
-};
 
 int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max)
 {
@@ -331,8 +289,9 @@ OUT:
 // /proc/net/route
 // /proc/net/arp
 // /proc/net/dev
+// #if 0
 
-int main(void)
+int test_get_sysinfo(void)
 {
     int ninfo = 0,i = 0;
     cpuinfo_item *cpu_item = NULL;
@@ -347,7 +306,7 @@ int main(void)
     printf("procs              : %u\n",get_procs());    //进程数
 
     char *ifname = "enp0s3";
-    value = get_sysdev_info(ifname,"speed");
+    value = get_netdev_info(ifname,"speed");
     if(value)
         printf("ifname=\"%s\" mtu=%s\n",ifname,value);
 
@@ -379,5 +338,120 @@ int main(void)
     FREE(mem_item);
     FREE(route_item);
     FREE(arp_item);
-    return i;
+    return 0;
+}
+
+// #endif
+char *get_if_info(char *ifname,int cmd)
+{
+    char *value = NULL;
+	int socketfd;
+    
+    struct ifreq struReq;
+    memset(&struReq, 0x00, sizeof(struct ifreq));
+    strncpy(struReq.ifr_name, ifname, sizeof(struReq.ifr_name));  
+    
+    socketfd = socket(PF_INET, SOCK_STREAM, 0);
+    if (-1 == ioctl(socketfd, cmd, &struReq)) {
+        perror("ioctl");
+        return NULL;
+    }
+    switch (cmd){
+        case SIOCGIFHWADDR:
+            value = ether_ntoa((struct ether_addr*)struReq.ifr_hwaddr.sa_data); 
+            break;
+        case SIOCGIFADDR:
+            value = inet_ntoa(((struct sockaddr_in *)&(struReq.ifr_addr))->sin_addr);
+            break;
+        case SIOCGIFNETMASK:
+            value = inet_ntoa(((struct sockaddr_in *)&(struReq.ifr_netmask))->sin_addr);    
+            break;
+        default:
+            break;
+    }
+ 
+    // log_s(value);
+    close(socketfd);
+ 
+    return strdup(value);   
+}
+
+char *get_if_ipstr(char *ifname)
+{
+	int sockfd;
+	struct ifreq ifr;
+	struct sockaddr_in sin;
+	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		perror("socket");
+		return NULL;
+	}
+	strcpy(ifr.ifr_name,ifname);
+	if(ioctl(sockfd, SIOCGIFADDR, &ifr) < 0)//直接获取IP地址
+	{
+		perror("ioctl");
+		return NULL;
+	}
+	memcpy(&sin, &ifr.ifr_dstaddr, sizeof(sin));
+	// printf("ip is %s \n",inet_ntoa(sin.sin_addr));
+
+    close(sockfd);
+
+	return strdup(inet_ntoa(sin.sin_addr));
+}
+
+char *get_if_macstr(char *ifname)
+{
+    return get_netdev_info(ifname,"address");
+}
+
+char *iphex2ipstr(char *iphex)
+{
+    if(!iphex || !iphex[0])
+        return NULL;
+    int ng=strtol(iphex,NULL,16);  //16进制
+    struct in_addr addr;
+    addr.s_addr=ng;
+    return inet_ntoa(addr);
+}
+
+char *get_gateway(void)
+{
+    int ninfo = 0,i = 0;
+    route_item *route_item = NULL;
+    struct in_addr addr;
+    char *value = NULL;
+
+    ninfo = route_query(RT_DEST,"00000000",&route_item,1);
+    // for(i=0;i<ninfo;i++)
+        // printf("ifname=\"%s\" dest=\"%s\" gateway=\"%s\" flags=\"%s\" metric=\"%s\" mask=\"%s\"\n",
+        //     route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
+    if(ninfo){
+        value = iphex2ipstr(route_item[0].gateway);
+        free(route_item);
+        if(value)
+            return strdup(value);
+    }
+    
+    return NULL;
+}
+
+char *get_gateway_if(void)
+{
+    int ninfo = 0,i = 0;
+    route_item *route_item = NULL;
+    struct in_addr addr;
+    char *value = NULL;
+
+    ninfo = route_query(RT_DEST,"00000000",&route_item,1);
+    // for(i=0;i<ninfo;i++)
+        // printf("ifname=\"%s\" dest=\"%s\" gateway=\"%s\" flags=\"%s\" metric=\"%s\" mask=\"%s\"\n",
+            // route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
+    if(ninfo){
+        value = strdup(route_item[0].ifname);
+        free(route_item);
+        return value;
+    }
+    
+    return NULL;
 }
