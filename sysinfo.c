@@ -291,7 +291,7 @@ OUT:
 // /proc/net/dev
 // #if 0
 
-int test_get_sysinfo(void)
+int test_get_sysinfo(char *ifname)
 {
     int ninfo = 0,i = 0;
     cpuinfo_item *cpu_item = NULL;
@@ -305,7 +305,6 @@ int test_get_sysinfo(void)
     printf("freeram_rate       : %f%%\n",get_freeram_rate());    //进程数
     printf("procs              : %u\n",get_procs());    //进程数
 
-    char *ifname = "enp0s3";
     value = get_netdev_info(ifname,"speed");
     if(value)
         printf("ifname=\"%s\" mtu=%s\n",ifname,value);
@@ -314,24 +313,19 @@ int test_get_sysinfo(void)
     for(i=0;i<ninfo;i++)
         printf("key=\"%s\" value=\"%s\"\n",cpu_item[i].key,cpu_item[i].value);
 
-
-
     ninfo = meminfo_query("SwapTotal",&mem_item,4);
     for(i=0;i<ninfo;i++)
         printf("key=\"%s\" value=\"%s\" extra=\"%s\"\n",mem_item[i].key,mem_item[i].value,mem_item[i].extra);
     
-    // ninfo = route_query(RT_IFNAME,"enp0s3",&route_item,4);
     ninfo = route_query(RT_DEST,"00000000",&route_item,4);
     for(i=0;i<ninfo;i++)
         printf("ifname=\"%s\" dest=\"%s\" gateway=\"%s\" flags=\"%s\" metric=\"%s\" mask=\"%s\"\n",
             route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
 
-    ninfo = arp_query(ARP_IFNAME,"enp0s3",&arp_item,4);
+    ninfo = arp_query(ARP_IFNAME,ifname,&arp_item,4);
     for(i=0;i<ninfo;i++)
         printf("ip=\"%s\" type=\"%s\" flags=\"%s\" mac=\"%s\" ifname=\"%s\"\n",
             arp_item[i].ip,arp_item[i].type,arp_item[i].flags,arp_item[i].mac,arp_item[i].ifname);
-
-
 
     FREE(value);
     FREE(cpu_item);
@@ -457,6 +451,7 @@ char *get_gateway_if(void)
 
 char *macstr_fmt(char *mac,char *sep)
 {
+    if(!mac || !sep) return NULL;
     char *net_mac = NULL;
     static char out_macstr[32] = {0};
     net_mac = (char *)ether_aton(mac);
@@ -468,6 +463,7 @@ char *macstr_fmt(char *mac,char *sep)
 
 char *macstr_unfmt(char *mac,char *sep)
 {
+    if(!mac || !sep) return NULL;
     char fmt[64] = {0},net_mac[6] = {0};
     static char out_macstr[32] = {0};
     sprintf(fmt,"%%02X%s%%02X%s%%02X%s%%02X%s%%02X%s%%02X",sep,sep,sep,sep,sep);

@@ -121,7 +121,7 @@ int meminfo_query(char *find_key,meminfo_item **item,size_t max);
 int route_query(enum RT_QUERY_TYPE type,char *find_key,route_item **item,size_t max);
 int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max);
 
-int test_get_sysinfo(void);
+int test_get_sysinfo(char *ifname);
 
 char *iphex2ipstr(char *iphex);
 char *get_if_info(char *ifname,int cmd);           // ioctl based
