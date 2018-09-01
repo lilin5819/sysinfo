@@ -2,6 +2,17 @@
 #include "sysinfo.h"
 #include "log.h"
 
+#include <sys/sysinfo.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <sys/types.h>
+#include <netinet/in.h> 
+#include <netinet/ip.h>
+#include <net/ethernet.h>
+#include <netinet/ether.h> 
+
 LOG_DEF()
 
 int main(int argc, char const *argv[])
@@ -16,38 +27,28 @@ int main(int argc, char const *argv[])
 
     test_get_sysinfo();
 
-    gateway = get_gateway();
-    log_string(gateway);
-    gateway_if = get_gateway_if();
-    log_string(gateway_if);
+    log_string(get_gateway());
+    log_string(get_gateway_if());
 
-    macstr = get_if_macstr("enp0s3");
-    log_string(macstr);
-    ipstr = get_if_ipstr("enp0s8");
-    log_string(ipstr);
-    FREE(ipstr);
-    ipstr = get_if_ipstr("enp0s10");
-    log_string(ipstr);
-    FREE(ipstr);
-    ipstr = get_if_ipstr("enp0s15");
-    log_string(ipstr);
-    FREE(ipstr);
+    puts("\n");
+    log_string(get_if_macstr("enp0s3"));
+    log_string(macstr_fmt(get_if_macstr("enp0s3"),"-"));
+    log_string(macstr_unfmt(macstr_fmt(get_if_macstr("enp0s3"),"-"),"-"));
+    puts("\n");
+    log_string(get_if_macstr("enp0s3"));
+    log_string(macstr_fmt(get_if_macstr("enp0s3"),""));
+    log_string(macstr_unfmt(macstr_fmt(get_if_macstr("enp0s3"),""),""));
+    puts("\n");
+    log_string(get_if_ipstr("enp0s8"));
+    log_string(get_if_ipstr("enp0s10"));
+    log_string(get_if_ipstr("enp0s15"));
+    puts("\n");
+    log_string(get_if_info("enp0s3",SIOCGIFHWADDR));
+    log_string(macstr_fmt(get_if_info("enp0s3",SIOCGIFHWADDR),"-"));
+    log_string(get_if_info("enp0s3",SIOCGIFADDR));
+    log_string(get_if_info("enp0s3",SIOCGIFNETMASK));
+    log_string(get_if_info("enp0s11",SIOCGIFNETMASK));
 
-    info = get_if_info("enp0s3",SIOCGIFHWADDR);
-    log_string(info);
-    FREE(info);
-    info = get_if_info("enp0s3",SIOCGIFADDR);
-    log_string(info);
-    FREE(info);
-    info = get_if_info("enp0s3",SIOCGIFNETMASK);
-    log_string(info);
-    FREE(info);
-    info = get_if_info("enp0s11",SIOCGIFNETMASK);
-    log_string(info);
-    FREE(info);
-
-    FREE(gateway); FREE(gateway_if);FREE(macstr); FREE(ipstr); FREE(ipstr); FREE(ipstr); FREE(info);
-    
     /* code */
     return 0;
 }   

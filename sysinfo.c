@@ -373,7 +373,7 @@ char *get_if_info(char *ifname,int cmd)
     // log_s(value);
     close(socketfd);
  
-    return strdup(value);   
+    return value;   
 }
 
 char *get_if_ipstr(char *ifname)
@@ -397,7 +397,7 @@ char *get_if_ipstr(char *ifname)
 
     close(sockfd);
 
-	return strdup(inet_ntoa(sin.sin_addr));
+	return inet_ntoa(sin.sin_addr);
 }
 
 char *get_if_macstr(char *ifname)
@@ -429,8 +429,7 @@ char *get_gateway(void)
     if(ninfo){
         value = iphex2ipstr(route_item[0].gateway);
         free(route_item);
-        if(value)
-            return strdup(value);
+        return value;
     }
     
     return NULL;
@@ -441,17 +440,40 @@ char *get_gateway_if(void)
     int ninfo = 0,i = 0;
     route_item *route_item = NULL;
     struct in_addr addr;
-    char *value = NULL;
+    static char value[32] = {0};
 
     ninfo = route_query(RT_DEST,"00000000",&route_item,1);
     // for(i=0;i<ninfo;i++)
         // printf("ifname=\"%s\" dest=\"%s\" gateway=\"%s\" flags=\"%s\" metric=\"%s\" mask=\"%s\"\n",
             // route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
     if(ninfo){
-        value = strdup(route_item[0].ifname);
+        sprintf(value,"%s",route_item[0].ifname);
         free(route_item);
         return value;
     }
     
     return NULL;
+}
+
+char *macstr_fmt(char *mac,char *sep)
+{
+    char *net_mac = NULL;
+    static char out_macstr[32] = {0};
+    net_mac = (char *)ether_aton(mac);
+    if(!net_mac) return NULL;
+    sprintf(out_macstr,"%02X%s%02X%s%02X%s%02X%s%02X%s%02X",
+        net_mac[0]&0xff,sep,net_mac[1]&0xff,sep,net_mac[2]&0xff,sep,net_mac[3]&0xff,sep,net_mac[4]&0xff,sep,net_mac[5]&0xff);
+    return out_macstr;
+}
+
+char *macstr_unfmt(char *mac,char *sep)
+{
+    char fmt[64] = {0},net_mac[6] = {0};
+    static char out_macstr[32] = {0};
+    sprintf(fmt,"%%02X%s%%02X%s%%02X%s%%02X%s%%02X%s%%02X",sep,sep,sep,sep,sep);
+    sscanf(mac,fmt,&net_mac[0],&net_mac[1],&net_mac[2],&net_mac[3],&net_mac[4],&net_mac[5]);
+    if(!net_mac) return NULL;
+    sprintf(out_macstr,"%02X:%02X:%02X:%02X:%02X:%02X",
+        net_mac[0]&0xff,net_mac[1]&0xff,net_mac[2]&0xff,net_mac[3]&0xff,net_mac[4]&0xff,net_mac[5]&0xff);
+    return out_macstr;
 }

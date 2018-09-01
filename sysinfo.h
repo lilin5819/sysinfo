@@ -130,4 +130,7 @@ char *get_gateway_if(void);
 char *get_if_ipstr(char *ifname);
 char *get_if_macstr(char *ifname);
 
+char *macstr_fmt(char *mac,char *sep);
+char *macstr_unfmt(char *mac,char *sep);
+
 #endif
