@@ -41,10 +41,14 @@ int main(int argc, char const *argv[])
     log_string(get_if_macstr(ifname));
     log_string(macstr_fmt(get_if_macstr(ifname),"-"));
     log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),"-"));
+    // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),""));
+    // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),"-"),":"));
     puts("\n");
     log_string(get_if_macstr(ifname));
     log_string(macstr_fmt(get_if_macstr(ifname),""));
     log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),""));
+    // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),"-"));
+    // log_string(macstr_unfmt(macstr_fmt(get_if_macstr(ifname),""),":"));
     puts("\n");
     log_string(get_if_ipstr("enp0s8"));
     log_string(get_if_ipstr("enp0s10"));
