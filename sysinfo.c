@@ -11,6 +11,11 @@
 #include <netinet/ether.h> 
 #include "sysinfo.h"
 
+/**
+ * AUTH: lilin
+ * github: https://github.com/lilin5819/sysinfo
+ * email: 1657301947@qq.com
+ */
 
 long get_uptime()
 {

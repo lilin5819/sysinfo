@@ -7,6 +7,12 @@
 #include <stdint.h>
 #include <unistd.h>
 
+/**
+ * AUTH: lilin
+ * github: https://github.com/lilin5819/sysinfo
+ * email: 1657301947@qq.com
+ */
+
 #ifndef FREE
 #define FREE(x)        \
     do                 \

@@ -2,17 +2,6 @@
 #include "sysinfo.h"
 #include "log.h"
 
-#include <sys/sysinfo.h>
-#include <arpa/inet.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <net/if.h>
-#include <sys/types.h>
-#include <netinet/in.h> 
-#include <netinet/ip.h>
-#include <net/ethernet.h>
-#include <netinet/ether.h> 
-
 LOG_DEF()
 
 int main(int argc, char const *argv[])
