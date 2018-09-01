@@ -109,6 +109,7 @@ char* get_file_value(char *filename)
         sprintf(value,"%s",line);
 
 OUT:
+    FREE(line);
     FCLOSE(stream);
     return nread > 0 ? value : NULL;
 }
