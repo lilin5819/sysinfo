@@ -17,6 +17,25 @@
  * email: 1657301947@qq.com
  */
 
+
+char* strupr(char *str)
+{
+    int i = 0;
+    if(!str) return NULL;
+    for(i = 0 ;i < strlen(str);i++)
+        str[i] = toupper(str[i]);
+    return str;
+}
+
+char* strlwr(char *str)
+{
+    int i = 0;
+    if(!str) return NULL;
+    for(i = 0 ;i < strlen(str);i++)
+        str[i] = tolower(str[i]);
+    return str;
+}
+
 long get_uptime()
 {
     struct sysinfo info;
@@ -69,7 +88,7 @@ sysinfo_t *get_sysinfo()
     if(-1 == sysinfo(&info))
         return NULL;
     
-    if(!(sysinfo_p = (sysinfo_t *)malloc(sizeof(sysinfo_t)))){
+    if(!(sysinfo_p = (sysinfo_t *)MALLOC(sizeof(sysinfo_t)))){
         return NULL;
     }
     sysinfo_p->uptime = info.uptime;
@@ -98,6 +117,7 @@ char* get_file_value(char *filename)
     static char value[128] = {0}; 
     ssize_t nread = 0,len = 0;
 
+    if(!filename) return NULL;
     if (!(stream = fopen(filename, "r")) ) {
         perror("fopen");
         goto OUT;
@@ -133,9 +153,10 @@ int cpuinfo_query(char *find_key,cpuinfo_item **item,size_t max)
     size_t len = 0,nline = 0,nfound = 0;
     ssize_t nread;
 
+    if(!find_key || !item) return 0;
     max = max >= 8 ? 8 : max;
-    if(!(*item = (cpuinfo_item *)malloc(max * sizeof(cpuinfo_item))) ) {
-        perror("malloc");
+    if(!(*item = (cpuinfo_item *)MALLOC(max * sizeof(cpuinfo_item))) ) {
+        perror("MALLOC");
         goto OUT;
     }
 
@@ -167,9 +188,10 @@ int meminfo_query(char *find_key,meminfo_item **item,size_t max)
     size_t len = 0,nline = 0,nfound = 0;
     ssize_t nread;
 
+    if(!find_key || !item) return 0;
     max = max >= 8 ? 8 : max;
-    if(!((*item) = (meminfo_item *)malloc(max * sizeof(meminfo_item)))) {
-        perror("malloc");
+    if(!((*item) = (meminfo_item *)MALLOC(max * sizeof(meminfo_item)))) {
+        perror("MALLOC");
         goto OUT;
     }
 
@@ -200,9 +222,10 @@ int route_query(enum RT_QUERY_TYPE type,char *find_key,route_item **item,size_t 
     size_t len = 0,nline = 0,nfound = 0;
     ssize_t nread;
 
+    if(!find_key || !item) return 0;
     max = max >= 8 ? 8 : max;
-    if(!((*item) = (route_item *)malloc(max * sizeof(route_item)))) {
-        perror("malloc");
+    if(!((*item) = (route_item *)MALLOC(max * sizeof(route_item)))) {
+        perror("MALLOC");
         goto OUT;
     }
 
@@ -260,9 +283,10 @@ int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max
     size_t len = 0,nline = 0,nfound = 0;
     ssize_t nread;
 
+    if(!find_key || !item) return 0;
     max = max >= 8 ? 8 : max;
-    if(!((*item) = (arp_item *)malloc(max * sizeof(arp_item)))) {
-        perror("malloc");
+    if(!((*item) = (arp_item *)MALLOC(max * sizeof(arp_item)))) {
+        perror("MALLOC");
         goto OUT;
     }
 
@@ -292,7 +316,7 @@ int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max
         if(nline++ == 0 || nread <= 1) continue;
         sscanf(line,"%s %s %s %s %*s %s",
             (*item)[nfound].ip,(*item)[nfound].type,(*item)[nfound].flags,(*item)[nfound].mac,(*item)[nfound].ifname);
-        if(0 == strcmp(pkey,find_key)){
+        if(0 == strcasecmp(pkey,find_key)){
             // printf("ip=\"%s\" type=\"%s\" flags=\"%s\" mac=\"%s\" ifname=\"%s\"\n",
                 // (*item)[nfound].ip,(*item)[nfound].type,(*item)[nfound].flags,(*item)[nfound].mac,(*item)[nfound].ifname);
             pkey  = pkey + sizeof(arp_item);
@@ -322,6 +346,9 @@ int test_get_sysinfo(char *ifname)
     route_item *route_item = NULL;
     arp_item *arp_item = NULL;
     char *value = NULL;
+
+    if(!ifname) return NULL;
+
     printf("uptime          : %ld\n",get_uptime());//打印从设备开启到现在的时间，单位为秒    
     printf("totalram           : %lu KB\n",get_totalram());//总可用内存大小  
     printf("freeram            : %lu KB\n",get_freeram()); //剩余内存   
@@ -370,7 +397,8 @@ char *get_if_info(char *ifname,int cmd)
 {
     char *value = NULL;
 	int socketfd;
-    
+
+    if(!ifname) return NULL;
     struct ifreq struReq;
     memset(&struReq, 0x00, sizeof(struct ifreq));
     strncpy(struReq.ifr_name, ifname, sizeof(struReq.ifr_name));  
@@ -382,7 +410,7 @@ char *get_if_info(char *ifname,int cmd)
     }
     switch (cmd){
         case SIOCGIFHWADDR:
-            value = ether_ntoa((struct ether_addr*)struReq.ifr_hwaddr.sa_data); 
+            value = macstr_fmt(ether_ntoa((struct ether_addr*)struReq.ifr_hwaddr.sa_data),":"); 
             break;
         case SIOCGIFADDR:
             value = inet_ntoa(((struct sockaddr_in *)&(struReq.ifr_addr))->sin_addr);
@@ -402,31 +430,13 @@ char *get_if_info(char *ifname,int cmd)
 
 char *get_if_ipstr(char *ifname)
 {
-	int sockfd;
-	struct ifreq ifr;
-	struct sockaddr_in sin;
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-	{
-		perror("socket");
-		return NULL;
-	}
-	strcpy(ifr.ifr_name,ifname);
-	if(ioctl(sockfd, SIOCGIFADDR, &ifr) < 0)//直接获取IP地址
-	{
-		perror("ioctl");
-		return NULL;
-	}
-	memcpy(&sin, &ifr.ifr_dstaddr, sizeof(sin));
-	// printf("ip is %s \n",inet_ntoa(sin.sin_addr));
-
-    close(sockfd);
-
-	return inet_ntoa(sin.sin_addr);
+	return get_if_info(ifname,SIOCGIFADDR);
 }
 
 char *get_if_macstr(char *ifname)
 {
-    return get_netdev_info(ifname,"address");
+    // return get_netdev_info(ifname,"address");
+	return get_if_info(ifname,SIOCGIFHWADDR);
 }
 
 char *iphex2ipstr(char *iphex)
@@ -439,7 +449,7 @@ char *iphex2ipstr(char *iphex)
     return inet_ntoa(addr);
 }
 
-char *get_gateway(void)
+char *get_gw(void)
 {
     int ninfo = 0,i = 0;
     route_item *route_item = NULL;
@@ -452,14 +462,14 @@ char *get_gateway(void)
         //     route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
     if(ninfo){
         value = iphex2ipstr(route_item[0].gateway);
-        free(route_item);
+        FREE(route_item);
         return value;
     }
     
     return NULL;
 }
 
-char *get_gateway_if(void)
+char *get_gw_if(void)
 {
     int ninfo = 0,i = 0;
     route_item *route_item = NULL;
@@ -472,10 +482,36 @@ char *get_gateway_if(void)
             // route_item[i].ifname,route_item[i].dest,route_item[i].gateway,route_item[i].flags,route_item[i].metric,route_item[i].mask);
     if(ninfo){
         sprintf(value,"%s",route_item[0].ifname);
-        free(route_item);
+        FREE(route_item);
         return value;
     }
     
+    return NULL;
+}
+
+char *get_ipstr_from_macstr(char *macstr)
+{
+    if(!macstr) return NULL;
+    static char ipstr[32] = {0};
+    arp_item *arp_item = NULL;
+    if(arp_query(ARP_MAC,macstr,&arp_item,1) > 0){
+        sprintf(ipstr,"%s",arp_item[0].ip);
+        FREE(arp_item);
+        return ipstr;
+    }
+    return NULL;
+}
+
+char *get_macstr_from_ipstr(char *ipstr)
+{
+    if(!ipstr) return NULL;
+    static char macstr[32] = {0};
+    arp_item *arp_item = NULL;
+    if(arp_query(ARP_IP,ipstr,&arp_item,1) > 0){
+        sprintf(macstr,"%s",macstr_fmt(arp_item[0].mac,":"));
+        FREE(arp_item);
+        return macstr;
+    }
     return NULL;
 }
 
@@ -502,4 +538,30 @@ char *macstr_unfmt(char *mac,char *sep)
     sprintf(out_macstr,"%02X:%02X:%02X:%02X:%02X:%02X",
         net_mac[0]&0xff,net_mac[1]&0xff,net_mac[2]&0xff,net_mac[3]&0xff,net_mac[4]&0xff,net_mac[5]&0xff);
     return out_macstr;
+}
+
+#ifndef _LOG_H_
+#include "log.h"
+#endif
+
+void test_all_sysinfo_api(void)
+{
+    test_get_sysinfo(get_gw_if());
+#ifdef _LOG_H_
+    log_string(get_gw());
+    log_string(get_gw_if());
+    log_string(get_if_macstr(get_gw_if()));
+    log_string(get_if_ipstr(get_gw_if()));
+    log_string(get_if_info(get_gw_if(),SIOCGIFHWADDR));
+    log_string(get_if_info(get_gw_if(),SIOCGIFADDR));
+    log_string(get_if_info(get_gw_if(),SIOCGIFNETMASK));
+
+    log_string(get_if_ipstr("eth0"));
+    log_string(get_if_ipstr("eth1"));
+    log_string(get_if_ipstr("enp0s8"));
+    log_string(get_if_ipstr("wlan0"));
+
+    log_string(get_ipstr_from_macstr("50:2b:73:ff:9d:81"));
+    log_string(get_macstr_from_ipstr("172.16.0.155"));
+#endif
 }

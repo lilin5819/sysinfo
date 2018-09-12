@@ -12,6 +12,9 @@
  * github: https://github.com/lilin5819/sysinfo
  * email: 1657301947@qq.com
  */
+#ifndef MALLOC
+#define MALLOC malloc
+#endif
 
 #ifndef FREE
 #define FREE(x)        \
@@ -114,32 +117,41 @@ enum ARP_QUERY_TYPE{
     ARP_IFNAME,
 };
 
+char* strupr(char *str);
+char* strlwr(char *str);
 long get_uptime();
 unsigned long get_totalram();
 unsigned long get_freeram();
 double get_freeram_rate();
 unsigned int get_procs();
 
-sysinfo_t *get_sysinfo();
+sysinfo_t *get_sysinfo();            //请手动free 返回值
 void print_sysinfo(sysinfo_t *sys);
 
-char* get_file_value(char *filename);
-char* get_netdev_info(char *ifname,char *item);
-int cpuinfo_query(char *find_key,cpuinfo_item **item,size_t max);
-int meminfo_query(char *find_key,meminfo_item **item,size_t max);
-int route_query(enum RT_QUERY_TYPE type,char *find_key,route_item **item,size_t max);
-int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max);
-
-int test_get_sysinfo(char *ifname);
-
-char *iphex2ipstr(char *iphex);
-char *get_if_info(char *ifname,int cmd);           // ioctl based
-char *get_gateway(void);                           // file based
-char *get_gateway_if(void);
-char *get_if_ipstr(char *ifname);
-char *get_if_macstr(char *ifname);
+int cpuinfo_query(char *find_key,cpuinfo_item **item,size_t max);                        //请手动free item
+int meminfo_query(char *find_key,meminfo_item **item,size_t max);                       //请手动free item
+int route_query(enum RT_QUERY_TYPE type,char *find_key,route_item **item,size_t max);                       //请手动free item
+int arp_query(enum ARP_QUERY_TYPE type,char *find_key,arp_item **item,size_t max);             //请手动free item
 
 char *macstr_fmt(char *mac,char *sep);
 char *macstr_unfmt(char *mac,char *sep);
+
+//以下的函数都不用free返回值，原理如同inet_addr ether_addr等函数，内部静态
+
+char* get_file_value(char *filename);
+char* get_netdev_info(char *ifname,char *item);
+char *iphex2ipstr(char *iphex);
+char *get_if_info(char *ifname,int cmd);           // ioctl based
+char *get_gw(void);                           // file based
+char *get_gw_if(void);
+char *get_if_ipstr(char *ifname);
+char *get_if_macstr(char *ifname);
+char *get_ipstr_from_macstr(char *macstr);
+char *get_macstr_from_ipstr(char *ipstr);
+
+// 测试函数
+
+int test_get_sysinfo(char *ifname);
+void test_all_sysinfo_api(void);
 
 #endif
